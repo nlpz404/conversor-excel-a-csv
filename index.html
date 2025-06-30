@@ -1,115 +1,46 @@
+<!--
+  Conversor de archivos Excel (XLSX) a CSV para importación en AtoM.
+  El template CSV corresponde al requerido por la versión 2.8 de AtoM: https://www.accesstomemory.org/es/docs/2.8/user-manual/import-export/csv-import/
+-->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Conversores AtoM</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <title>Conversor Excel a CSV (AtoM)</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 2em;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2em;
-    }
-    .panel {
-      flex: 1;
-      min-width: 300px;
-      max-width: 600px;
-    }
-    button {
-      margin-right: 0.5em;
-      margin-top: 0.5em;
-    }
-    footer {
-      margin-top: 4em;
-      font-size: 0.85em;
-      color: #555;
-      width: 100%;
-    }
-  </style>
 </head>
 <body>
-  <!-- PANEL IZQUIERDO: AtoM a Excel -->
   <div class="panel">
-    <h2>AtoM (CSV) a Excel o CSV</h2>
-    <p>Convierte un archivo CSV exportado desde el buscador de AtoM al template para importación, en formato Excel o CSV.</p>
-    <input type="file" id="dataFileAtoM"><br>
-    <button onclick="procesarCSV()">Reordenar y descargar CSV</button>
-    <button onclick="procesarExcel()">Reordenar y descargar Excel</button>
-    <p style="font-size: 0.8em">Se recomienda guardar el archivo con el código de descripción correspondiente.</p>
-  </div>
-
-  <!-- PANEL DERECHO: Excel a AtoM -->
-  <div class="panel">
-    <h2>Excel a AtoM</h2>
-    <p>Convierte una hoja de Excel al formato CSV compatible con AtoM, asegurando el orden correcto de columnas.</p>
+    <h2>Conversor Excel (XLSX) a CSV AtoM</h2>
+    <p>Convierte una hoja de Excel a la plantilla CSV para importar descripciones en AtoM.</p>
     <input type="file" id="dataFileExcel"><br>
-    <button onclick="excelAatom()">Reordenar y descargar CSV para AtoM</button>
+    <button onclick="excelAatom()">Descargar CSV</button>
   </div>
-
-  <!-- PIE DE PÁGINA -->
-  <footer>
-    <p>Creado por Nicolás López para su uso dentro del Departamento de Documentos de Cine, Audio y Video del Archivo General de la Nación (Argentina). Año: 2025</p>
-  </footer>
 
   <script>
-    const ordenColumnas = ["legacyId", "parentId", "qubitParentSlug", "accessionNumber", "identifier", "title", "levelOfDescription", "extentAndMedium", "repository", "archivalHistory", "acquisition", "scopeAndContent", "appraisal", "accruals", "arrangement", "accessConditions", "reproductionConditions", "language", "script", "languageNote", "physicalCharacteristics", "findingAids", "locationOfOriginals", "locationOfCopies", "relatedUnitsOfDescription", "publicationNote", "digitalObjectURI", "digitalObjectChecksum", "generalNote", "subjectAccessPoints", "placeAccessPoints", "nameAccessPoints", "genreAccessPoints", "descriptionIdentifier", "institutionIdentifier", "rules", "descriptionStatus", "levelOfDetail", "revisionHistory", "languageOfDescription", "scriptOfDescription", "sources", "archivistNote", "publicationStatus", "physicalObjectName", "physicalObjectLocation", "physicalObjectType", "alternativeIdentifiers", "alternativeIdentifierLabels", "eventDates", "eventTypes", "eventStartDates", "eventEndDates", "eventActors", "eventActorHistories", "culture"];
+    // Encabezados de columnas necesarios para las descripciones a importar en AtoM.
+    const ordenColumnas = [
+      "legacyId", "parentId", "qubitParentSlug", "accessionNumber", "identifier", "title", "levelOfDescription",
+      "extentAndMedium", "repository", "archivalHistory", "acquisition", "scopeAndContent", "appraisal", "accruals",
+      "arrangement", "accessConditions", "reproductionConditions", "language", "script", "languageNote",
+      "physicalCharacteristics", "findingAids", "locationOfOriginals", "locationOfCopies", "relatedUnitsOfDescription",
+      "publicationNote", "digitalObjectURI", "digitalObjectChecksum", "generalNote", "subjectAccessPoints",
+      "placeAccessPoints", "nameAccessPoints", "genreAccessPoints", "descriptionIdentifier", "institutionIdentifier",
+      "rules", "descriptionStatus", "levelOfDetail", "revisionHistory", "languageOfDescription", "scriptOfDescription",
+      "sources", "archivistNote", "publicationStatus", "physicalObjectName", "physicalObjectLocation",
+      "physicalObjectType", "alternativeIdentifiers", "alternativeIdentifierLabels", "eventDates", "eventTypes",
+      "eventStartDates", "eventEndDates", "eventActors", "eventActorHistories", "culture"
+    ];
 
-    // AtoM a Excel
-    function procesarArchivoAtoM(callback) {
-      const file = document.getElementById('dataFileAtoM').files[0];
-      if (!file) {
-        alert("Por favor sube un archivo CSV.");
-        return;
-      }
-
-      Papa.parse(file, {
-        complete: function(results) {
-          const inputHeaders = results.data[0];
-          const rows = results.data.slice(1);
-          const columnIndices = ordenColumnas.map(h => inputHeaders.indexOf(h));
-          if (columnIndices.includes(-1)) {
-            alert("Faltan columnas esperadas.");
-            return;
-          }
-
-          const reordered = [ordenColumnas];
-          rows.forEach(row => {
-            const newRow = columnIndices.map(i => row[i]);
-            reordered.push(newRow);
-          });
-
-          callback(reordered);
-        },
-        skipEmptyLines: true
-      });
-    }
-
-    function procesarCSV() {
-      procesarArchivoAtoM(reordered => {
-        const csvFinal = Papa.unparse(reordered);
-        const blob = new Blob([csvFinal], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "reordenado.csv";
-        link.click();
-      });
-    }
-
-    function procesarExcel() {
-      procesarArchivoAtoM(reordered => {
-        const worksheet = XLSX.utils.aoa_to_sheet(reordered);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Datos");
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        const blob = new Blob([wbout], { type: "application/octet-stream" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "reordenado.xlsx";
-        link.click();
-      });
+    // Conversor de array de arrays a CSV
+    function arrayToCSV(data) {
+      return data.map(row =>
+        row.map(value => {
+          const val = String(value ?? "");
+          const escaped = val.includes('"') ? val.replace(/"/g, '""') : val;
+          return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+        }).join(',')
+      ).join('\n');
     }
 
     // Excel a AtoM
@@ -143,11 +74,11 @@
           reordered.push(newRow);
         });
 
-        const csvFinal = Papa.unparse(reordered);
+        const csvFinal = arrayToCSV(reordered);
         const blob = new Blob([csvFinal], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "para-atom.csv";
+        link.download = "inventarioAnaliticoAtoM.csv";
         link.click();
       };
 
